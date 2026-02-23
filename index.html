@@ -78,8 +78,8 @@
 </div>
 
 <script>
-    // Configuration avec ton API Key
-    const API_KEY = "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";
+    // Configuration avec ton NOUVEAU API Key
+    const API_KEY = "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";
     const MODEL_ID = "arcee-ai/arcee-trinity-large-preview:free";
 
     async function sendMessage() {
@@ -103,7 +103,9 @@
                 method: "POST",
                 headers: {
                     "Authorization": `Bearer ${API_KEY}`,
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": "https://localhost", // إضافة ضرورية لتجنب خطأ User not found
+                    "X-Title": "Salma App"              // إضافة ضرورية
                 },
                 body: JSON.stringify({
                     "model": MODEL_ID,
@@ -116,7 +118,9 @@
             if (data.choices && data.choices.length > 0) {
                 responseDisplay.innerText = data.choices[0].message.content;
             } else {
-                responseDisplay.innerText = "Erreur: " + (data.error?.message || "Vérifiez votre clé ou connexion.");
+                // إظهار الخطأ بالتفصيل باش نعرفو شنو واقع
+                console.error(data);
+                responseDisplay.innerText = "Erreur: " + (data.error?.message || "Erreur inconnue.");
             }
 
         } catch (error) {
