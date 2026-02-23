@@ -3,43 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interface IA - Test</title>
+    <title>IA Chat - LiquidAI</title>
     <style>
-        body { font-family: sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .chat-container { background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 90%; max-width: 500px; }
-        h2 { color: #1a73e8; text-align: center; }
-        textarea { width: 100%; height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; resize: none; }
-        button { width: 100%; padding: 12px; background-color: #1a73e8; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #eef2f7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 500px;
+        }
+        h2 { color: #333; text-align: center; margin-bottom: 20px; }
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            box-sizing: border-box;
+            font-size: 14px;
+            margin-bottom: 15px;
+            transition: border-color 0.3s;
+        }
+        textarea:focus { border-color: #4A90E2; outline: none; }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #4A90E2;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        button:hover { background-color: #357ABD; }
         button:disabled { background-color: #ccc; }
-        #response-container { margin-top: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid #1a73e8; min-height: 50px; }
+        #response {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 10px;
+            border-left: 5px solid #4A90E2;
+            min-height: 40px;
+            font-size: 14px;
+            color: #444;
+            white-space: pre-wrap;
+        }
+        .loading { color: #777; font-style: italic; }
     </style>
 </head>
 <body>
 
-<div class="chat-container">
-    <h2>Test IA (Gemini Free)</h2>
-    <textarea id="userInput" placeholder="Écrivez votre question ici..."></textarea>
-    <button id="sendBtn" onclick="sendMessage()">Envoyer</button>
-    <div id="response-container">
-        <strong>Réponse :</strong>
-        <div id="responseText">En attente...</div>
-    </div>
+<div class="container">
+    <h2>LiquidAI Assistant</h2>
+    <textarea id="userInput" placeholder="Écrivez votre message ici..."></textarea>
+    <button id="sendBtn" onclick="askIA()">Envoyer la demande</button>
+    <div id="response">La réponse apparaîtra ici...</div>
 </div>
 
 <script>
-    const API_KEY = "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";
-    // جربنا موديل آخر فابور ومستقر أكثر
-    const MODEL_ID = "google/gemini-2.0-flash-lite-preview-02-05:free";
+    // --- Configuration ---
+    const API_KEY = "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";
+    const MODEL_ID = "liquid/lfm-2.5-1.2b-instruct:free";
 
-    async function sendMessage() {
-        const input = document.getElementById('userInput').value;
+    async function askIA() {
+        const input = document.getElementById('userInput');
         const btn = document.getElementById('sendBtn');
-        const res = document.getElementById('responseText');
+        const resDiv = document.getElementById('response');
 
-        if (!input) return alert("Texte vide !");
+        if (!input.value.trim()) {
+            alert("Veuillez écrire quelque chose.");
+            return;
+        }
 
+        // Interface en mode chargement
         btn.disabled = true;
-        res.innerText = "Chargement...";
+        resDiv.innerHTML = '<span class="loading">L\'IA génère une réponse...</span>';
 
         try {
             const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -47,27 +96,33 @@
                 headers: {
                     "Authorization": `Bearer ${API_KEY}`,
                     "Content-Type": "application/json",
-                    "HTTP-Referer": "http://localhost",
-                    "X-Title": "TestApp"
+                    "HTTP-Referer": window.location.origin, // Pour OpenRouter
+                    "X-Title": "My Local App"
                 },
                 body: JSON.stringify({
                     "model": MODEL_ID,
-                    "messages": [{ "role": "user", "content": input }]
+                    "messages": [{ "role": "user", "content": input.value }]
                 })
             });
 
             const data = await response.json();
-            if (data.choices) {
-                res.innerText = data.choices[0].message.content;
+
+            if (data.choices && data.choices.length > 0) {
+                resDiv.innerText = data.choices[0].message.content;
+            } else if (data.error) {
+                resDiv.innerText = "Désolé, il y a une erreur : " + data.error.message;
+                console.error("Détails de l'erreur:", data.error);
             } else {
-                res.innerText = "Erreur : " + JSON.stringify(data.error);
+                resDiv.innerText = "Une réponse vide a été reçue.";
             }
-        } catch (e) {
-            res.innerText = "Erreur de réseau.";
+
+        } catch (error) {
+            resDiv.innerText = "Erreur de connexion : " + error.message;
         } finally {
             btn.disabled = false;
         }
     }
 </script>
+
 </body>
 </html>
