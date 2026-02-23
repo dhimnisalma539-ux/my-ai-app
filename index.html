@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interface IA - Arcee Trinity</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .chat-container {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 550px;
+        }
+        h2 { color: #1a73e8; margin-top: 0; font-size: 22px; text-align: center; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #444; }
+        textarea {
+            width: 100%;
+            height: 120px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+            resize: none;
+            font-size: 15px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        button:disabled { background-color: #ccc; }
+        #loader { display: none; text-align: center; margin-top: 15px; color: #666; font-style: italic; }
+        #response-container {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-left: 4px solid #1a73e8;
+            border-radius: 4px;
+            min-height: 60px;
+        }
+        .response-text { white-space: pre-wrap; color: #333; line-height: 1.5; }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <h2>Arcee AI Trinity Large</h2>
+    
+    <label for="userInput">Posez votre question :</label>
+    <textarea id="userInput" placeholder="Écrivez votre message ici..."></textarea>
+    
+    <button id="sendBtn" onclick="sendMessage()">Envoyer la demande</button>
+    
+    <div id="loader">L'IA réfléchit...</div>
+    
+    <div id="response-container">
+        <strong>Réponse :</strong>
+        <div id="responseText" class="response-text">La réponse s'affichera ici...</div>
+    </div>
+</div>
+
+<script>
+    // Configuration avec ton API Key
+    const API_KEY = "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";
+    const MODEL_ID = "arcee-ai/arcee-trinity-large-preview:free";
+
+    async function sendMessage() {
+        const inputElement = document.getElementById('userInput');
+        const button = document.getElementById('sendBtn');
+        const loader = document.getElementById('loader');
+        const responseDisplay = document.getElementById('responseText');
+
+        const prompt = inputElement.value.trim();
+        if (!prompt) {
+            alert("Veuillez saisir un texte.");
+            return;
+        }
+
+        button.disabled = true;
+        loader.style.display = "block";
+        responseDisplay.innerText = "Connexion en cours...";
+
+        try {
+            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${API_KEY}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    "model": MODEL_ID,
+                    "messages": [{ "role": "user", "content": prompt }]
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.choices && data.choices.length > 0) {
+                responseDisplay.innerText = data.choices[0].message.content;
+            } else {
+                responseDisplay.innerText = "Erreur: " + (data.error?.message || "Vérifiez votre clé ou connexion.");
+            }
+
+        } catch (error) {
+            responseDisplay.innerText = "Erreur de connexion : " + error.message;
+        } finally {
+            button.disabled = false;
+            loader.style.display = "none";
+        }
+    }
+</script>
+
+</body>
+</html>
